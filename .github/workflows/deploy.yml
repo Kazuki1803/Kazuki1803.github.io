@@ -3,7 +3,7 @@ name: Deploy Website
 on:
   push:
     branches:
-      - main  # Bleibt auf "main", weil deine index.html dort liegt
+      - main  # Trigger auf Änderungen im "main"-Branch
 
 jobs:
   deploy:
@@ -13,8 +13,7 @@ jobs:
       - name: Repository auschecken
         uses: actions/checkout@v3
 
-      - name: Deployment auf GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          branch: main  # Bleibt "main"
-          folder: .  # Falls dein Code in einem Unterordner ist, passe das an
+      - name: GitHub Pages neu deployen
+        run: |
+          git fetch --unshallow
+          git push origin main
