@@ -7,7 +7,7 @@
     <style>
         :root{
             --bg:#0b0b0b;
-            --card:#212529; /* Hier geändert, um den Hintergrund heller zu machen */
+            --card:#212529;
             --muted:#9aa0a6;
             --accent:#e3261e;
             --accent-2:#ff6b6b;
@@ -102,7 +102,7 @@
                     <div class="row">
                         <div class="col-2">
                             <label>Date & Time (Local Time)</label>
-                            <input type="datetime-local" id="datetime" />
+                            <input type="datetime-local" id="datetime"/>
                         </div>
                     </div>
 
@@ -110,7 +110,7 @@
                     <input type="text" id="opponent" placeholder="Opponent Name / Event" />
 
                     <label>Tags (separate with commas)</label>
-                    <input type="text" id="tags" placeholder="Ligue, Playoffs etc." />
+                    <input type="text" id="tags" placeholder="League, Playoffs etc." />
 
                     <label><input type="checkbox" id="autoDelete"/> Auto-delete when time limit is reached</label>
 
@@ -140,12 +140,12 @@
         const HASHED_ADMIN_PASSWORD = '5224d18db48c01ebba8386528aa19fb198fc413aa08ebb04407edafe6d435a3f';
 
         async function sha256(message) {
-    const msgBuffer = new TextEncoder().encode(message);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return hashHex;
-}
+            const msgBuffer = new TextEncoder().encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            return hashHex;
+        }
 
         function uid(){return 'g-'+Date.now()+'-'+Math.floor(Math.random()*9999)}
         function saveAll(arr){localStorage.setItem(LS_KEY, JSON.stringify(arr))}
@@ -171,22 +171,21 @@
         })
 
         passwordSubmitBtn.addEventListener('click', async () => {
-    const enteredPassword = adminPasswordInput.value;
-    const enteredPasswordHash = await sha256(enteredPassword);
+            const enteredPassword = adminPasswordInput.value;
+            const enteredPasswordHash = await sha256(enteredPassword);
 
-    if (enteredPasswordHash === HASHED_ADMIN_PASSWORD) {
-        passwordPanel.style.display = 'none';
-        viewSchedule.style.display = 'none';
-        viewAdmin.style.display = 'block';
-        adminPasswordInput.value = '';
-        clearForm();
-        buildAdminList();
-    } else {
-        alert('Falsches Passwort!');
-        adminPasswordInput.value = '';
-    }
-});
-
+            if (enteredPasswordHash === HASHED_ADMIN_PASSWORD) {
+                passwordPanel.style.display = 'none';
+                viewSchedule.style.display = 'none';
+                viewAdmin.style.display = 'block';
+                adminPasswordInput.value = '';
+                clearForm();
+                buildAdminList();
+            } else {
+                alert('Wrong password!');
+                adminPasswordInput.value = '';
+            }
+        });
 
         adminPasswordInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
@@ -279,7 +278,7 @@
         function loadToForm(id){
             const arr = loadAll();
             const it = arr.find(x=>x.id===id);
-            if(!it) { alert('Nicht gefunden'); return; }
+            if(!it) { alert('Not found'); return; }
             inputId.value = it.id;
             inputTitle.value = it.title;
             inputOpponent.value = it.opponent || '';
@@ -307,7 +306,7 @@
             const tags = inputTags.value.split(',').map(t=>t.trim()).filter(t=>t.length>0);
             const autoDelete = inputAutoDelete.checked;
             let dtVal = inputDatetime.value;
-            if(!dtVal){alert('Bitte Datum & Zeit eingeben');return}
+            if(!dtVal){alert('Please enter a date & time');return}
             const localDate = new Date(dtVal);
             const storeISO = localDate.toISOString();
             const item = {id,title,opponent,autoDelete,time: storeISO, tags};
@@ -343,7 +342,7 @@
             arr = arr.filter(it=>{
                 const t = new Date(it.time).getTime();
                 if(isNaN(t)) return true;
-                // Lösche 15 Minuten nach der geplanten Zeit
+                // Delete 15 minutes after the scheduled time
                 if(it.autoDelete && t <= now - 15 * 60 * 1000) return false;
                 return true;
             });
