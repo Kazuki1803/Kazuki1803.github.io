@@ -37,33 +37,10 @@
         .tags{display:flex;gap:6px;align-items:center; margin-top: 4px;}
         .tag{padding:6px 8px;border-radius:8px;background:var(--glass-2);font-size:12px;color:var(--muted)}
         .countdown{min-width:120px;text-align:right;font-family:monospace}
-        form{display:flex;flex-direction:column;gap:8px}
-        label{font-size:13px;color:var(--muted)}
-        input[type=text], input[type=datetime-local]{padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit}
-        .row{display:flex;gap:8px}
-        .row .col-2{flex:1}
         .small{font-size:12px;color:var(--muted)}
         .muted{color:var(--muted)}
         footer{margin-top:16px;text-align:center;color:var(--muted);font-size:13px}
         @media(max-width:900px){main{flex-direction:column}.game .time{display:none}}
-        #passwordPanel {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            gap: 15px;
-            z-index: 1000;
-        }
-        #passwordPanel input {
-            font-size: 16px;
-            padding: 10px;
-        }
     </style>
 </head>
 <body>
@@ -72,14 +49,10 @@
             <img id="logo" src="smash_logo.png" alt="Smash Logo"/>
             <div class="brand">
                 <h1>Smash — Game Schedule</h1>
-                <p>Matches & Admin Panel</p>
-            </div>
-            <div class="controls">
-                <button class="btn" id="btn-schedule">Schedule</button>
-                <button class="btn" id="btn-admin">Admin Panel</button>
+                <p>Upcoming Matches</p>
             </div>
         </header>
-
+        
         <main>
             <section class="col" id="view-schedule">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
@@ -87,131 +60,69 @@
                     <div class="small muted">Times shown in your local timezone</div>
                 </div>
                 <div class="schedule-list" id="scheduleList"></div>
-                <div style="margin-top:14px;display:flex;gap:8px;align-items:center">
-                    <button class="btn" id="btn-refresh">Refresh Now</button>
-                    <div class="small muted">Auto-clean runs every 30s for matches with Auto-Delete enabled.</div>
-                </div>
             </section>
-            <aside class="col" id="view-admin" style="display:none">
-                <h2 style="margin-top:0">Admin Panel</h2>
-                <form id="gameForm">
-                    <input type="hidden" id="gameId" />
-                    <label>Match Title</label>
-                    <input type="text" id="title" placeholder="... vs ..." required />
-
-                    <div class="row">
-                        <div class="col-2">
-                            <label>Date & Time (Local Time)</label>
-                            <input type="datetime-local" id="datetime"/>
-                        </div>
-                    </div>
-
-                    <label>Opponent / Event</label>
-                    <input type="text" id="opponent" placeholder="Opponent Name / Event" />
-
-                    <label>Tags (separate with commas)</label>
-                    <input type="text" id="tags" placeholder="League, Playoffs etc." />
-
-                    <label><input type="checkbox" id="autoDelete"/> Auto-delete when time limit is reached</label>
-
-                    <div style="display:flex;gap:8px;margin-top:8px">
-                        <button type="submit" class="btn primary" id="saveBtn">Save</button>
-                        <button type="button" class="btn" id="newGameBtn">New Game</button>
-                    </div>
-
-                    <hr style="border:none;border-top:1px solid rgba(255,255,255,0.03);margin:12px 0" />
-                    <h3 style="margin:0 0 8px 0">Existing Games</h3>
-                    <div id="adminList" style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow:auto"></div>
-                </form>
-            </aside>
         </main>
-
+        
         <footer>© Made by kazuki18003</footer>
     </div>
-
-    <div id="passwordPanel" style="display: none;">
-        <h3 style="color:#fff;">Admin Login</h3>
-        <input type="password" id="adminPassword" placeholder="Password required" />
-        <button class="btn primary" id="passwordSubmit">Login</button>
-    </div>
-
+    
     <script>
-        const LS_KEY = 'smash_schedule_v1';
-        const HASHED_ADMIN_PASSWORD = '5224d18db48c01ebba8386528aa19fb198fc413aa08ebb04407edafe6d435a3f';
-
-        async function sha256(message) {
-            const msgBuffer = new TextEncoder().encode(message);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-            return hashHex;
-        }
-
-        function uid(){return 'g-'+Date.now()+'-'+Math.floor(Math.random()*9999)}
-        function saveAll(arr){localStorage.setItem(LS_KEY, JSON.stringify(arr))}
-        function loadAll(){try{return JSON.parse(localStorage.getItem(LS_KEY))||[]}catch(e){return[]}}
-
-        const btnSchedule = document.getElementById('btn-schedule');
-        const btnAdmin = document.getElementById('btn-admin');
-        const viewSchedule = document.getElementById('view-schedule');
-        const viewAdmin = document.getElementById('view-admin');
-        const passwordPanel = document.getElementById('passwordPanel');
-        const adminPasswordInput = document.getElementById('adminPassword');
-        const passwordSubmitBtn = document.getElementById('passwordSubmit');
-        const newGameBtn = document.getElementById('newGameBtn');
-
-        btnSchedule.addEventListener('click', ()=>{
-            viewSchedule.style.display='block';
-            viewAdmin.style.display='none';
-        })
-        
-        btnAdmin.addEventListener('click', ()=>{
-            passwordPanel.style.display = 'flex';
-            adminPasswordInput.focus();
-        })
-
-        passwordSubmitBtn.addEventListener('click', async () => {
-            const enteredPassword = adminPasswordInput.value;
-            const enteredPasswordHash = await sha256(enteredPassword);
-
-            if (enteredPasswordHash === HASHED_ADMIN_PASSWORD) {
-                passwordPanel.style.display = 'none';
-                viewSchedule.style.display = 'none';
-                viewAdmin.style.display = 'block';
-                adminPasswordInput.value = '';
-                clearForm();
-                buildAdminList();
-            } else {
-                alert('Wrong password!');
-                adminPasswordInput.value = '';
+        const SCHEDULE_DATA = [
+            {
+                title: 'Smash Championship Final',
+                opponent: 'Team Falcon',
+                autoDelete: false,
+                time: '2025-08-15T20:00:00.000Z',
+                tags: ['Finals', 'Championship']
+            },
+            {
+                title: 'Training Match',
+                opponent: 'Team Fox',
+                autoDelete: true,
+                time: '2025-08-18T18:30:00.000Z',
+                tags: ['Practice']
+            },
+            {
+                title: 'Friendly Match',
+                opponent: 'Team Star',
+                autoDelete: false,
+                time: '2025-08-20T21:00:00.000Z',
+                tags: ['Casual']
             }
-        });
+        ];
 
-        adminPasswordInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                passwordSubmitBtn.click();
-            }
-        });
-
+        // DOM-Element
         const scheduleList = document.getElementById('scheduleList');
-        function renderSchedule(){
-            const items = loadAll().sort((a,b)=> new Date(a.time) - new Date(b.time));
-            scheduleList.innerHTML='';
-            if(items.length===0){scheduleList.innerHTML='<div class="muted">No upcoming matches. Go to the Admin Panel to add matches.</div>';return}
-            for(const it of items){
-                const el = document.createElement('div'); el.className='game';
-                const timeBox = document.createElement('div'); timeBox.className='time';
+
+        function renderSchedule() {
+            const items = SCHEDULE_DATA.sort((a,b)=> new Date(a.time) - new Date(b.time));
+            scheduleList.innerHTML = '';
+            
+            if (items.length === 0) {
+                scheduleList.innerHTML = '<div class="muted">No upcoming matches.</div>';
+                return;
+            }
+
+            for (const it of items) {
+                const el = document.createElement('div');
+                el.className = 'game';
+                
+                const timeBox = document.createElement('div');
+                timeBox.className = 'time';
                 const dt = new Date(it.time);
                 timeBox.innerText = dt.toLocaleString();
-
-                const meta = document.createElement('div'); meta.className='meta';
-                const h = document.createElement('h3'); h.innerText = it.title || 'Untitled';
-                const p = document.createElement('p'); p.innerText = (it.opponent? 'vs '+it.opponent : '');
+                
+                const meta = document.createElement('div');
+                meta.className = 'meta';
+                const h = document.createElement('h3');
+                h.innerText = it.title || 'Untitled';
+                const p = document.createElement('p');
+                p.innerText = (it.opponent ? 'vs ' + it.opponent : '');
                 
                 const tagsContainer = document.createElement('div');
                 tagsContainer.className = 'tags';
-                if(it.tags && it.tags.length > 0) {
-                    for(const tagText of it.tags) {
+                if (it.tags && it.tags.length > 0) {
+                    for (const tagText of it.tags) {
                         const tagEl = document.createElement('span');
                         tagEl.className = 'tag';
                         tagEl.innerText = tagText;
@@ -219,147 +130,45 @@
                     }
                 }
                 
-                meta.appendChild(h); 
+                meta.appendChild(h);
                 meta.appendChild(p);
                 meta.appendChild(tagsContainer);
-
-                const countdown = document.createElement('div'); countdown.className='countdown'; countdown.dataset.time = it.time; countdown.dataset.id = it.id;
-
-                el.appendChild(timeBox); el.appendChild(meta); el.appendChild(countdown);
+                
+                const countdown = document.createElement('div');
+                countdown.className = 'countdown';
+                countdown.dataset.time = it.time;
+                
+                el.appendChild(timeBox);
+                el.appendChild(meta);
+                el.appendChild(countdown);
                 scheduleList.appendChild(el);
             }
             updateCountdowns();
         }
-
-        function updateCountdowns(){
+        
+        function updateCountdowns() {
             const now = Date.now();
-            document.querySelectorAll('.countdown').forEach(el=>{
+            document.querySelectorAll('.countdown').forEach(el => {
                 const t = new Date(el.dataset.time).getTime();
-                const id = el.dataset.id;
-                if(isNaN(t)){el.innerText='-';return}
+                if (isNaN(t)) {
+                    el.innerText = '-';
+                    return;
+                }
                 const diff = t - now;
-                if(diff<=0){el.innerText='LIVE / ENDED';return}
-                const s = Math.floor(diff/1000)%60;
-                const m = Math.floor(diff/60000)%60;
-                const h = Math.floor(diff/3600000)%24;
-                const d = Math.floor(diff/86400000);
-                el.innerText = (d?d+'d ':'') + String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
-            })
-        }
-
-        const form = document.getElementById('gameForm');
-        const inputId = document.getElementById('gameId');
-        const inputTitle = document.getElementById('title');
-        const inputDatetime = document.getElementById('datetime');
-        const inputOpponent = document.getElementById('opponent');
-        const inputTags = document.getElementById('tags');
-        const inputAutoDelete = document.getElementById('autoDelete');
-        const adminList = document.getElementById('adminList');
-
-        function buildAdminList(){
-            const arr = loadAll().sort((a,b)=> new Date(a.time)-new Date(b.time));
-            adminList.innerHTML='';
-            if(arr.length===0){adminList.innerHTML='<div class="muted">No games have been created yet.</div>';return}
-            for(const it of arr){
-                const wrap = document.createElement('div'); wrap.style.display='flex';wrap.style.justifyContent='space-between';wrap.style.alignItems='center';
-                const left = document.createElement('div');
-                const dt = new Date(it.time);
-                const tagsHtml = it.tags ? it.tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('') : '';
-                left.innerHTML = `<strong>${escapeHtml(it.title)}</strong><div class="small muted">${dt.toLocaleString()} — ${escapeHtml(it.opponent||'')}</div><div class="tags">${tagsHtml}</div>`;
-                const actions = document.createElement('div'); actions.style.display='flex';actions.style.gap='6px';
-                const edit = document.createElement('button'); edit.className='btn'; edit.innerText='Edit'; edit.type='button'; edit.onclick=()=>loadToForm(it.id);
-                const del = document.createElement('button'); del.className='btn'; del.innerText='Delete'; del.type='button'; del.onclick=()=>{if(confirm('Delete?')) removeGame(it.id)};
-                actions.appendChild(edit); actions.appendChild(del);
-                wrap.appendChild(left); wrap.appendChild(actions);
-                adminList.appendChild(wrap);
-            }
-        }
-
-        function loadToForm(id){
-            const arr = loadAll();
-            const it = arr.find(x=>x.id===id);
-            if(!it) { alert('Not found'); return; }
-            inputId.value = it.id;
-            inputTitle.value = it.title;
-            inputOpponent.value = it.opponent || '';
-            inputTags.value = (it.tags || []).join(', ');
-            inputAutoDelete.checked = !!it.autoDelete;
-            const dt = new Date(it.time);
-            const iso = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().substring(0, 16);
-            inputDatetime.value = iso;
-        }
-
-        function removeGame(id){
-            let arr = loadAll();
-            arr = arr.filter(x=>x.id!==id);
-            saveAll(arr);
-            renderAll();
-        }
-
-        newGameBtn.addEventListener('click', clearForm);
-
-        form.addEventListener('submit', (e)=>{
-            e.preventDefault();
-            const id = inputId.value || uid();
-            const title = inputTitle.value.trim() || 'Untitled';
-            const opponent = inputOpponent.value.trim();
-            const tags = inputTags.value.split(',').map(t=>t.trim()).filter(t=>t.length>0);
-            const autoDelete = inputAutoDelete.checked;
-            let dtVal = inputDatetime.value;
-            if(!dtVal){alert('Please enter a date & time');return}
-            const localDate = new Date(dtVal);
-            const storeISO = localDate.toISOString();
-            const item = {id,title,opponent,autoDelete,time: storeISO, tags};
-            const arr = loadAll();
-            const idx = arr.findIndex(x=>x.id===id);
-            if(idx>=0) arr[idx]=item; else arr.push(item);
-            saveAll(arr);
-            clearForm(); renderAll();
-        });
-
-        function clearForm(){
-            inputId.value = '';
-            inputTitle.value = '';
-            inputOpponent.value = '';
-            inputTags.value = '';
-            inputAutoDelete.checked = false;
-            inputDatetime.value = '';
-        }
-
-        function renderAdmin(){
-            buildAdminList();
-        }
-
-        function renderAll(){
-            renderSchedule();
-            renderAdmin();
-        }
-
-        function autoClean(){
-            const now = Date.now();
-            let arr = loadAll();
-            const before = arr.length;
-            arr = arr.filter(it=>{
-                const t = new Date(it.time).getTime();
-                if(isNaN(t)) return true;
-                // Delete 15 minutes after the scheduled time
-                if(it.autoDelete && t <= now - 15 * 60 * 1000) return false;
-                return true;
+                if (diff <= 0) {
+                    el.innerText = 'LIVE / ENDED';
+                    return;
+                }
+                const s = Math.floor(diff / 1000) % 60;
+                const m = Math.floor(diff / 60000) % 60;
+                const h = Math.floor(diff / 3600000) % 24;
+                const d = Math.floor(diff / 86400000);
+                el.innerText = (d ? d + 'd ' : '') + String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
             });
-            if(arr.length !== before) saveAll(arr);
         }
-
-        setInterval(()=>{ autoClean(); renderAll(); }, 30*1000);
+        
         setInterval(updateCountdowns, 1000);
-        document.getElementById('btn-refresh').addEventListener('click', renderAll);
-
-        function escapeHtml(s){ if(!s) return ''; return s.replace(/[&<>\"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-        renderAll();
-    
-        if(!inputDatetime.value){
-            const d = new Date(); d.setHours(d.getHours()+1);
-            inputDatetime.value = d.toISOString().substring(0,16);
-        }
+        renderSchedule();
     </script>
 </body>
 </html>
